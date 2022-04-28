@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ming.questionnaire_backstage.mapper.AnswerMapper">
+
+    <!--查询文本题详细信息-->
+    <!--结果集映射-->
+    <resultMap type="com.ming.questionnaire_backstage.pojo.views.paperCensus.TextAreaDetails" id="textAreaDetail">
+        <!--column数据库中的字段 property实体类中的属性-->
+        <result property="answer" column="answer"/>
+        <result property="answerTime" column="create_time"/>
+    </resultMap>
+    <!--查询详细信息-->
+    <select id="getTextAreaDetails"
+            resultMap="textAreaDetail">
+        select `answer`,`create_time`
+        from questionnaires.answer
+        where question_id=#{questionId}
+        order by create_time desc
+        limit #{pageNum},#{pageSize}
+    </select>
+    <select id="getAllTextAreaDetails"
+            resultMap="textAreaDetail">
+        select `answer`,`create_time`
+        from questionnaires.answer
+        where question_id=#{questionId}
+        order by create_time desc
+    </select>
+</mapper>

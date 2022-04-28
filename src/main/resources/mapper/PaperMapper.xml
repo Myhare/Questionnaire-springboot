@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ming.questionnaire_backstage.mapper.PaperMapper">
+
+    <delete id="physicsDeleteById">
+        delete from questionnaires.paper where paper_id=#{paperId}
+    </delete>
+    <!--分页查询用户-->
+    <select id="selectPaperListPage"
+            resultType="com.ming.questionnaire_backstage.pojo.views.admin.ViewPaperInfo">
+        select p.paper_id,p.title,u.user_name,p.paper_status,p.create_time
+        from questionnaires.paper p
+                 left join questionnaires.user u on p.user_id = u.user_id
+        where p.isdelete=0
+        order by p.update_time desc
+        limit #{pageNum},#{pageSize}
+    </select>
+    <select id="selectPaperListPageW"
+            resultType="com.ming.questionnaire_backstage.pojo.views.admin.ViewPaperInfo">
+        select p.paper_id,p.title,u.user_name,p.paper_status,p.create_time
+        from questionnaires.paper p
+                 left join questionnaires.user u on p.user_id = u.user_id
+        where p.isdelete = 0 and p.title like concat('%',#{query},'%')
+        order by p.update_time desc
+        limit #{pageNum},#{pageSize}
+    </select>
+</mapper>
