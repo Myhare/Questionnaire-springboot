@@ -4,11 +4,13 @@ import com.ming.questionnaire_backstage.pojo.ResponseResult;
 import com.ming.questionnaire_backstage.pojo.User;
 import org.springframework.transaction.annotation.Transactional;
 
-@Transactional  // 开启事务管理
 public interface UserService {
 
     // 用户登录
     ResponseResult login(User user);
+
+    // 用户登出
+    ResponseResult logout(String userId);
 
     // 获取登录用户详细信息
     User getUserInfoById(String userId);
@@ -39,5 +41,7 @@ public interface UserService {
 
     // 验证邮箱
     ResponseResult bandEmail(String email,String key,String userId);
+
+
 
 }

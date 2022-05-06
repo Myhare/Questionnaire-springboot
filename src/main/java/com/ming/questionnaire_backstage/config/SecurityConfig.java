@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -55,14 +56,19 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 // 对于登录接口，所有用户都可以访问
                 .antMatchers("/login").permitAll()  // 允许所有用户访问这个接口
+                .antMatchers("/logout2").permitAll()  // 允许所有用户访问这个登出接口
                 // 允许所有用户访问后台登录接口
                 .antMatchers("/admin/login").permitAll()
                 // 允许所有用户进行用户注册
                 .antMatchers("/user/register/**").permitAll()  // 所有用户都允许访问
                 // 允许用户获取头像
-                .antMatchers("/uploadFile/**").anonymous()  // 前台直接从img中获取头像，没有携带token
+                .antMatchers("/uploadFile/**").permitAll()  // 前台直接从img中获取头像，没有携带token
                 // 允许匿名用户访问绑定邮箱接口
                 .antMatchers("/user/bandEmail").anonymous()
+                // 允许所有用户访问查询问卷接口
+                .antMatchers("/paper/getPaperById/*").permitAll()
+                // 允许所有用户访问查询问卷是否可以查看接口
+                .antMatchers("/paper/queryPState/*").permitAll()
                 // 除了上面定义的所有请求都需要鉴权认证
                 .anyRequest().authenticated();
 
@@ -74,4 +80,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         // 添加自定义过滤器,添加在UsernamePasswordAuthenticationFilter过滤器之前
         http.addFilterBefore(jwtAuthenticationTokenFilter,UsernamePasswordAuthenticationFilter.class);
     }
+
+    // @Override
+    // public void configure(WebSecurity web) throws Exception {
+    //     // 完全某一个接口
+    //     web.ignoring().antMatchers("/login");
+    // }
 }

@@ -13,6 +13,8 @@ import com.ming.questionnaire_backstage.pojo.views.admin.ViewPaperInfo;
 import com.ming.questionnaire_backstage.pojo.views.admin.ViewUserInfo;
 import com.ming.questionnaire_backstage.service.AdminService;
 import com.ming.questionnaire_backstage.utils.JwtUtil;
+import com.ming.questionnaire_backstage.utils.RedisUtil;
+import io.swagger.models.auth.In;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -23,9 +25,8 @@ import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @Service
 public class AdminServiceImpl implements AdminService {
@@ -37,6 +38,9 @@ public class AdminServiceImpl implements AdminService {
     private UserMapper userMapper;
     @Autowired
     private PaperMapper paperMapper;
+
+    @Autowired
+    private RedisUtil redisUtil;
 
     // 用户获取头像路径
     @Value("${web.get-head-path}")
@@ -53,7 +57,7 @@ public class AdminServiceImpl implements AdminService {
             throw new RuntimeException("登录失败,用户名或密码错误");
         }
         LoginUser loginUser = (LoginUser) authenticate.getPrincipal();
-        List<String> permissions = loginUser.getPermissions();
+        List<String> permissions = loginUser.getPermissions(); // 获取权限
         // 如果用户没有sys:admin权限，返回权限不足提示
         if (!permissions.contains("sys::admin")){
             return new ResponseResult(HttpStatus.UNAUTHORIZED.value(),"该用户没有权限登录后台，请登录管理员账户或者切换前台登录");
@@ -61,6 +65,9 @@ public class AdminServiceImpl implements AdminService {
 
         String userId = loginUser.getUser().getUserId();
         String token = JwtUtil.createJWT(userId);
+
+        // 将loginUser存入到redis中
+        redisUtil.set("login:"+userId,loginUser,60*60*3);  // 设置三个小时的过期时间
 
         // 通过userid查询用户详细信息传入前端
         User userInfo = userMapper.selectById(userId);
@@ -72,6 +79,72 @@ public class AdminServiceImpl implements AdminService {
         map.put("token",token);
         map.put("userInfo",userInfo);
         return new ResponseResult(200,"登录成功",map);
+    }
+
+    // 获取最近七天用户登录的人数
+    @Override
+    public Map<String,Object> getUserLoginCount() {
+        Date date = new Date();
+        SimpleDateFormat redisSdf = new SimpleDateFormat("yyyy-MM-dd");   // 用来拼接redis中的key
+        SimpleDateFormat mapSdf = new SimpleDateFormat("MM-dd");
+        HashMap<String, Object> map = new HashMap<>();
+        ArrayList<String> dateList = new ArrayList<>();   // 时间列表,前端统计图下标
+        ArrayList<Integer> countList = new ArrayList<>();  // 登录人数列表
+        Calendar calendar = Calendar.getInstance();   // 用来计算格式化日期
+        for (int i = -6; i <= 0; i++) {
+            calendar.setTime(date);
+            calendar.add(Calendar.DATE,i);  // 减去i天，一共循环7次
+            String redisKey = redisSdf.format(calendar.getTime())+":userCount";
+            countList.add(redisUtil.get(redisKey) == null ? 0 : (Integer) redisUtil.get(redisKey));
+            dateList.add(mapSdf.format(calendar.getTime()));
+        }
+        map.put("dateList",dateList);
+        map.put("countList",countList);
+        return map;
+    }
+
+    // 获取最近七天问卷发布情况
+    @Override
+    public Map<String, Object> getPaperReleaseCount() {
+        Date date = new Date();
+        SimpleDateFormat redisSdf = new SimpleDateFormat("yyyy-MM-dd");   // 用来拼接redis中的key
+        SimpleDateFormat mapSdf = new SimpleDateFormat("MM-dd");
+        HashMap<String, Object> map = new HashMap<>();
+        ArrayList<String> dateList = new ArrayList<>();   // 时间列表,前端统计图下标
+        ArrayList<Integer> countList = new ArrayList<>();  // 登录人数列表
+        Calendar calendar = Calendar.getInstance();   // 用来计算格式化日期
+        for (int i = -6; i <= 0; i++) {
+            calendar.setTime(date);
+            calendar.add(Calendar.DATE,i);  // 减去i天，一共循环7次
+            String redisKey = redisSdf.format(calendar.getTime())+":paperCount";
+            countList.add(redisUtil.get(redisKey) == null ? 0 : (Integer) redisUtil.get(redisKey));
+            dateList.add(mapSdf.format(calendar.getTime()));
+        }
+        map.put("dateList",dateList);
+        map.put("countList",countList);
+        return map;
+    }
+
+    // 获取七天内问卷回答情况
+    @Override
+    public Map<String, Object> getAnswerReleaseCount() {
+        Date date = new Date();
+        SimpleDateFormat redisSdf = new SimpleDateFormat("yyyy-MM-dd");   // 用来拼接redis中的key
+        SimpleDateFormat mapSdf = new SimpleDateFormat("MM-dd");
+        HashMap<String, Object> map = new HashMap<>();
+        ArrayList<String> dateList = new ArrayList<>();   // 时间列表,前端统计图下标
+        ArrayList<Integer> countList = new ArrayList<>();  // 登录人数列表
+        Calendar calendar = Calendar.getInstance();   // 用来计算格式化日期
+        for (int i = -6; i <= 0; i++) {
+            calendar.setTime(date);
+            calendar.add(Calendar.DATE,i);  // 减去i天，一共循环7次
+            String redisKey = redisSdf.format(calendar.getTime())+":answerCount";
+            countList.add(redisUtil.get(redisKey) == null ? 0 : (Integer) redisUtil.get(redisKey));
+            dateList.add(mapSdf.format(calendar.getTime()));
+        }
+        map.put("dateList",dateList);
+        map.put("countList",countList);
+        return map;
     }
 
     // 后台查询用户

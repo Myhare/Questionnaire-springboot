@@ -9,10 +9,12 @@ import com.ming.questionnaire_backstage.service.AnswerService;
 import com.ming.questionnaire_backstage.service.PaperService;
 import com.ming.questionnaire_backstage.service.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 
@@ -39,7 +41,7 @@ public class PaperController {
         addViewPaper.setUserId(loginUser.getUser().getUserId());
         addViewPaper.setPaperTitle(reqPaper.getPaperTitle());  // 设置问卷标题
         addViewPaper.setPaperIntroduce(reqPaper.getPaperIntroduce());  // 设置问卷简介
-        addViewPaper.setStatus(1);              // 问卷可以填写
+        addViewPaper.setStatus(reqPaper.getStatus());              // 问卷可以填写
         addViewPaper.setQuestionList(reqPaper.getQuestionList()); // 设置问题
         // TODO 设置开始时间和结束时间
         // 调用service 将用户设置的问题分解成问题表和问卷表，分别存入数据库中
@@ -118,6 +120,21 @@ public class PaperController {
             return new ResponseResult<Boolean>(400,"该问卷已经被封禁，请联系管理员解除封禁",true);
         }else {
             return new ResponseResult<Boolean>(200,"问卷没有被封禁",false);
+        }
+    }
+
+    // 查询一个问卷状态，用户是否有资格访问
+    @GetMapping("/queryPState/{paperId}")
+    public ResponseResult queryPState(@PathVariable("paperId")String paperId, HttpServletRequest request){
+        // i代表状态，如果是1，证明问卷可以成功访问（可能是问卷已经发布，也可能是问卷未发布但是问卷的发布者查看问卷）
+        // 如果是0说明问卷未发布，如果是-1说明问卷已封禁
+        int i = paperService.queryPStateById(paperId,request);
+        if (i==1){
+            return new ResponseResult(200,"查询成功,可以填写答卷");
+        }else if (i==0){
+            return new ResponseResult(401,"问卷未发布，请发布后再填写");
+        }else {
+            return new ResponseResult(401,"问卷已被封禁");
         }
     }
 

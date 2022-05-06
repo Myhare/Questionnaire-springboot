@@ -133,6 +133,7 @@ public class UserController {
     // 获取登录用户详细信息
     @GetMapping("/getUserInfo")
     public ResponseResult getUserInfo(){
+        // 获取当前登录用户信息
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         LoginUser loginUser = (LoginUser) authentication.getPrincipal();
         User user = loginUser.getUser();

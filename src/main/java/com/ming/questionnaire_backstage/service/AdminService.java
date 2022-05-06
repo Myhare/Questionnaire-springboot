@@ -7,6 +7,7 @@ import com.ming.questionnaire_backstage.pojo.views.admin.ViewPaperInfo;
 import com.ming.questionnaire_backstage.pojo.views.admin.ViewUserInfo;
 
 import java.util.List;
+import java.util.Map;
 
 public interface AdminService {
 
@@ -28,4 +29,13 @@ public interface AdminService {
     int banPaperById(String paperId);
     // 取消一个问卷的封禁
     int noBanPaperById(String paperId);
+
+    // 获取最近七天用户登录的人数
+    Map<String,Object> getUserLoginCount();
+
+    // 获取最近七天问卷发布情况
+    Map<String, Object> getPaperReleaseCount();
+
+    // 获取最近七天问卷回答情况
+    Map<String, Object> getAnswerReleaseCount();
 }

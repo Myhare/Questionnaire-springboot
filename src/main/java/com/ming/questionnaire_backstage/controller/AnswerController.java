@@ -32,15 +32,10 @@ public class AnswerController {
     @Autowired
     private AnswerService answerService;
 
-    // 添加一个问卷答案
+    // 添加一个问卷答案,回答问卷
     @PostMapping("/addAnswer")
     public ResponseResult addAnswer(@RequestBody PaperAnswer paperAnswer){
-        int i = answerService.addAnswer(paperAnswer);
-        if (i>0){
-            return new ResponseResult(200,"回答问卷成功");
-        }else {
-            return new ResponseResult(500,"出现问题，问卷添加失败");
-        }
+        return answerService.addAnswer(paperAnswer);
     }
 
     // 通过问卷id获取答案

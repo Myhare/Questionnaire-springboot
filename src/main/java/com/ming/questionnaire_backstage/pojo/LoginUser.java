@@ -1,6 +1,8 @@
 package com.ming.questionnaire_backstage.pojo;
 
 import com.alibaba.fastjson.annotation.JSONField;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,6 +10,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -16,6 +19,7 @@ import java.util.stream.Collectors;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)  // 忽略类中不存在的字段，防止反序列化的时候报错
 public class LoginUser implements UserDetails { // 自定义一个响应类实现UserDetails接口，SpringSecurity验证时使用
     private User user;
     // 登录用户信息
@@ -33,7 +37,8 @@ public class LoginUser implements UserDetails { // 自定义一个响应类实�
     }
 
     // 在存入redis中时候，为了安全考虑，redis不会允许存储，这里忽略,之后只需要将permissions存入redis也可以查询到权限
-    // @JSONField(serialize = false)  // 添加注解后这个属性就不会被序列化到流当中
+    // @JSONField(serialize = false)  // fastJSON添加注解后这个属性就不会被序列化到流当中
+    @JsonIgnore   // jackJSON忽略这个字段序列化，不然不能反序列化
     private List<SimpleGrantedAuthority> authorities;
 
     // 返回权限信息

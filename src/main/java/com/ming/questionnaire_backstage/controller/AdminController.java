@@ -27,6 +27,28 @@ public class AdminController {
         return adminService.adminLogin(user);
     }
 
+    // 获取用户近七天登录情况
+    @GetMapping("/getUserCount")
+    @PreAuthorize("hasAnyAuthority('sys::admin')")   // 需要对应权限才可以访问这个接口
+    public ResponseResult<List<Integer>> getUserCount(){
+        Map<String, Object> map = adminService.getUserLoginCount();
+        return new ResponseResult(200,"查询七天内登录人数成功",map);
+    }
+    // 获取用户近七天问卷创建情况
+    @GetMapping("/getPaperCount")
+    @PreAuthorize("hasAnyAuthority('sys::admin')")   // 需要对应权限才可以访问这个接口
+    public ResponseResult<List<Integer>> getPaperCount(){
+        Map<String, Object> map = adminService.getPaperReleaseCount();  // 获取问卷发布情况
+        return new ResponseResult(200,"查询七天内发布问卷人数成功",map);
+    }
+    // 获取用户近七天问卷创建情况
+    @GetMapping("/getAnswerCount")
+    @PreAuthorize("hasAnyAuthority('sys::admin')")   // 需要对应权限才可以访问这个接口
+    public ResponseResult<List<Integer>> getAnswerCount(){
+        Map<String, Object> map = adminService.getAnswerReleaseCount();  // 获取问卷发布情况
+        return new ResponseResult(200,"查询七天内回答问卷人数成功",map);
+    }
+
     // 分页获取用户信息
     @GetMapping("/getUsers")
     @PreAuthorize("hasAnyAuthority('sys::admin')")   // 需要对应权限才可以访问这个接口

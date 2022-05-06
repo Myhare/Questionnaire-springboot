@@ -1,5 +1,6 @@
 package com.ming.questionnaire_backstage.service;
 
+import com.ming.questionnaire_backstage.pojo.ResponseResult;
 import com.ming.questionnaire_backstage.pojo.views.PaperAnswer;
 import com.ming.questionnaire_backstage.pojo.views.QuestionAnswer;
 import com.ming.questionnaire_backstage.pojo.views.admin.QueryInfo;
@@ -19,11 +20,10 @@ import java.util.List;
  * @author Ming
  * @since 2022-04-05
  */
-@Transactional  // 开启事务管理
 public interface AnswerService {
 
     // 添加一个答案
-    int addAnswer(PaperAnswer paperAnswer);
+    ResponseResult addAnswer(PaperAnswer paperAnswer);
 
     // 查询一个问卷的所有回答
     List<QuestionContent> selectAnswerByPID(String paperId);

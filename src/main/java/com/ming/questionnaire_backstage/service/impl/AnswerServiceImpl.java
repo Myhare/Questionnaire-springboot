@@ -15,16 +15,19 @@ import com.ming.questionnaire_backstage.pojo.views.paperCensus.QuestionContent;
 import com.ming.questionnaire_backstage.pojo.views.paperCensus.TextAreaDetails;
 import com.ming.questionnaire_backstage.service.AnswerService;
 import com.ming.questionnaire_backstage.utils.ExcelUtil;
+import com.ming.questionnaire_backstage.utils.RedisUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -36,6 +39,7 @@ import java.util.*;
  * @since 2022-04-05
  */
 @Service
+@Transactional  // 开启事务管理
 public class AnswerServiceImpl implements AnswerService {
 
     @Autowired
@@ -44,14 +48,20 @@ public class AnswerServiceImpl implements AnswerService {
     private PaperMapper paperMapper;
     @Autowired
     private QuestionMapper questionMapper;
+    @Autowired
+    private RedisUtil redisUtil;
 
     // 添加一个答案
     @Override
-    public int addAnswer(PaperAnswer paperAnswer) {
+    public ResponseResult addAnswer(PaperAnswer paperAnswer) {
         String paperId = paperAnswer.getPaperId();
         // 通过问卷id查询问卷的详细信息
         Paper paper = paperMapper.selectById(paperId);
-
+        if (paper.getPaperStatus()==0){
+            return new ResponseResult(401,"问卷未发布");
+        }else if (paper.getPaperStatus()==-1){
+            return new ResponseResult(401,"问卷已被封禁");
+        }
         if (paper!=null){
             for (QuestionAnswer questionAnswer : paperAnswer.getAnswerList()) {
                 Answer answer = null;
@@ -75,7 +85,12 @@ public class AnswerServiceImpl implements AnswerService {
                 }
                 answerMapper.insert(answer);  // 将答案储存到数据库中
             }
-            return 1;  // 说明答案添加成功
+            // redis中今天回答问卷的数量加一
+            Date date = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String answerCountKey = sdf.format(date) + ":answerCount";
+            redisUtil.incr(answerCountKey,1);  // 今天回答问卷次数加一
+            return new ResponseResult(200,"回答问卷成功");  // 说明答案添加成功
         }else {
             throw new RuntimeException("问卷id无效");
         }

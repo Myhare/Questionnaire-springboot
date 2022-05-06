@@ -55,7 +55,7 @@ public class User implements Serializable {
     private String userIntroduce;
 
     @ApiModelProperty(value = "用户状态，1表示正常，0表示被封禁")
-    private String state;
+    private int state;
 
     public User(String userId, String userName, String userPassword, String userEmail, String userHeadPath, String userIntroduce) {
         this.userId = userId;

@@ -5,9 +5,9 @@ import com.ming.questionnaire_backstage.pojo.views.SimplePaper;
 import com.ming.questionnaire_backstage.pojo.views.AddViewPaper;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
-@Transactional  // 开启事务管理
 public interface PaperService {
 
     // 添加或者修改一个问卷
@@ -33,4 +33,7 @@ public interface PaperService {
 
     // 取消发布问卷
     int cancelIssuePaper(String paperId);
+
+    // 查询一个问卷的状态
+    int queryPStateById(String paperId, HttpServletRequest request);
 }

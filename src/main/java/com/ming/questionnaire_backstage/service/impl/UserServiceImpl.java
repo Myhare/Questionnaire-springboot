@@ -11,6 +11,7 @@ import com.ming.questionnaire_backstage.pojo.UserRole;
 import com.ming.questionnaire_backstage.service.UserService;
 import com.ming.questionnaire_backstage.utils.AsyncUtils;
 import com.ming.questionnaire_backstage.utils.JwtUtil;
+import com.ming.questionnaire_backstage.utils.RedisUtil;
 import com.ming.questionnaire_backstage.utils.UUIDUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,15 +24,20 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import sun.rmi.runtime.Log;
 
 import javax.servlet.ServletContext;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
 
 @Service
+@Transactional  // 开启事务管理
 public class UserServiceImpl implements UserService {
 
     @Autowired
@@ -43,6 +49,9 @@ public class UserServiceImpl implements UserService {
     private UserRoleMapper userRoleMapper;
     @Autowired
     private AsyncUtils asyncUtils;
+
+    @Autowired
+    private RedisUtil redisUtil;
 
     @Autowired
     private ServletContext servletContext;
@@ -83,10 +92,25 @@ public class UserServiceImpl implements UserService {
         if (userInfo.getUserHeadPath()!=null){
             userInfo.setUserHeadPath(getHeadPath+userInfo.getUserHeadPath());  // 更新用户头像信息
         }
+        // 将完整的用户信息存入到redis中
+        redisUtil.set("login:"+userId,loginUser,60*60*24);  // 设置三个小时的过期时间
+        // 在redis中存入今天登录的时间
+        Date date = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String loginUserCountKey = sdf.format(date) + ":userCount";
+        redisUtil.incr(loginUserCountKey,1);  // 今天登录用户次数加一
         Map<String, Object> map = new HashMap<>();
         map.put("token",token);
         map.put("userInfo",userInfo);
         return new ResponseResult(200,"登录成功",map);
+    }
+
+    // 用户登出
+    @Override
+    public ResponseResult logout(String userId) {
+        String redisKey = "login:" + userId;
+        redisUtil.del(redisKey);
+        return new ResponseResult(200,"登出成功");
     }
 
     // 通过id获取用户详细信息

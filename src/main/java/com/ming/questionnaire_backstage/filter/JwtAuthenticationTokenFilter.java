@@ -5,6 +5,7 @@ import com.ming.questionnaire_backstage.mapper.UserMapper;
 import com.ming.questionnaire_backstage.pojo.LoginUser;
 import com.ming.questionnaire_backstage.pojo.User;
 import com.ming.questionnaire_backstage.utils.JwtUtil;
+import com.ming.questionnaire_backstage.utils.RedisUtil;
 import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,12 +29,25 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private RedisUtil redisUtil;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        // 如果是登录接口和登出接口，直接放行
+        if (request.getRequestURL().toString().contains("/login")){
+            // 放行,后面还有其他的过滤器会处理没有token的问题
+            filterChain.doFilter(request,response);
+            return;
+        }else if (request.getRequestURL().toString().contains("/logout2")){
+            // 放行,后面还有其他的过滤器会处理没有token的问题
+            filterChain.doFilter(request,response);
+            return;
+        }
         // 获取token
         String token = request.getHeader("token");
         // System.out.println(StringUtils.hasText(token));
-        // 如果没有token，说明用户第一次登录
+        // 如果没有token，用户可能是在获取登录头像
         if (!StringUtils.hasText(token)){
             // 放行,后面还有其他的过滤器会处理没有token的问题
             filterChain.doFilter(request,response);
@@ -48,21 +62,13 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
             e.printStackTrace();
             throw new RuntimeException("token非法");
         }
-        // TODO 需要修改---通过userid查询数据库中的user信息，临时的权限验证
-        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_id",userId);
-        User user = userMapper.selectOne(queryWrapper);
-        // 获取对应用户的权限信息
-        List<String> powerList = userMapper.selectPowerById(userId);
-        LoginUser loginUser = new LoginUser(user, powerList);
+        // 通过用户id查询用户权限
+        String redisKey = "login:"+userId;
+        LoginUser loginUser = (LoginUser) redisUtil.get(redisKey);
 
-        // TODO 暂时不使用redis获取数据，以后改进
-        // 通过userId在redis中查询是否登录
-        // String redisKey = "login:"+userId;
-        // LoginUser loginUser = redisCache.getCacheObject(redisKey);
-        // if (Objects.isNull(loginUser)){
-        //     throw new RuntimeException("用户未登录");
-        // }
+        if (Objects.isNull(loginUser)){
+            throw new RuntimeException("登录信息过期，请重新登录");
+        }
         // 存入SecurityContextHolder，用来在后面的过滤器中认证使用
         // 获取权限信息，封装到Authentication中
         UsernamePasswordAuthenticationToken authenticationToken =

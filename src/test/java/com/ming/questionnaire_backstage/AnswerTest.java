@@ -2,6 +2,7 @@ package com.ming.questionnaire_backstage;
 
 import com.ming.questionnaire_backstage.mapper.AnswerMapper;
 import com.ming.questionnaire_backstage.pojo.Answer;
+import com.ming.questionnaire_backstage.pojo.ResponseResult;
 import com.ming.questionnaire_backstage.pojo.views.PaperAnswer;
 import com.ming.questionnaire_backstage.pojo.views.QuestionAnswer;
 import com.ming.questionnaire_backstage.pojo.views.paperCensus.TextAreaDetails;
@@ -45,12 +46,7 @@ public class AnswerTest {
         list.add(new QuestionAnswer(1,1,new String[]{"问题答案"}));
         list.add(new QuestionAnswer(1,1,new String[]{"问题答案"}));
         PaperAnswer answerList = new PaperAnswer("4ea046c25f7c4bd3816c8b9c94ee35ee", list);
-        int i = answerService.addAnswer(answerList);
-        if (i>0){
-            System.out.println("问卷添加成功");
-        }else {
-            System.out.println("问卷添加失败");
-        }
+        ResponseResult responseResult = answerService.addAnswer(answerList);
     }
     // 测试问卷是否有人填写
     @Test

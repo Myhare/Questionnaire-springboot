@@ -7,6 +7,7 @@ import com.ming.questionnaire_backstage.mapper.AnswerMapper;
 import com.ming.questionnaire_backstage.mapper.PaperMapper;
 import com.ming.questionnaire_backstage.mapper.QuestionMapper;
 import com.ming.questionnaire_backstage.pojo.Answer;
+import com.ming.questionnaire_backstage.pojo.LoginUser;
 import com.ming.questionnaire_backstage.pojo.Paper;
 import com.ming.questionnaire_backstage.pojo.Question;
 import com.ming.questionnaire_backstage.pojo.views.AddPaperViewQuestion;
@@ -15,16 +16,25 @@ import com.ming.questionnaire_backstage.pojo.views.AddViewPaper;
 import com.ming.questionnaire_backstage.service.AnswerService;
 import com.ming.questionnaire_backstage.service.PaperService;
 import com.ming.questionnaire_backstage.service.QuestionService;
+import com.ming.questionnaire_backstage.utils.JwtUtil;
+import com.ming.questionnaire_backstage.utils.RedisUtil;
 import com.ming.questionnaire_backstage.utils.UUIDUtils;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import javax.servlet.http.HttpServletRequest;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 @Service
+@Transactional  // 开启事务管理
 public class PaperServiceImpl implements PaperService {
 
     @Autowired
@@ -36,6 +46,8 @@ public class PaperServiceImpl implements PaperService {
     @Autowired
     private AnswerService answerService;
 
+    @Autowired
+    private RedisUtil redisUtil;
 
     // 添加或者修改一个问卷
     @Override
@@ -74,6 +86,11 @@ public class PaperServiceImpl implements PaperService {
             // 将addQuestion储存到数据库中
             questionMapper.insert(addQuestion);
         }
+        // redis中当前发布问卷或者更新问卷的数量加一
+        Date date = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String paperCountKey = sdf.format(date) + ":paperCount";
+        redisUtil.incr(paperCountKey,1);  // 今天发布问卷次数加一
         if (isUpdate){
             return 1;  // 说明更新了问卷
         }else {
@@ -136,6 +153,7 @@ public class PaperServiceImpl implements PaperService {
                     .setPaperId(paperId)
                     .setPaperTitle(paper.getTitle())
                     .setPaperIntroduce(paper.getIntroduce())
+                    .setStatus(paper.getPaperStatus())
                     .setQuestionList(viewQuestionList);
         } catch (Exception e) {
             e.printStackTrace();
@@ -180,5 +198,31 @@ public class PaperServiceImpl implements PaperService {
                 .eq("paper_id",paperId)
                 .set("paper_status",0);
         return paperMapper.update(null,updateWrapper);
+    }
+
+    // 查询一个问卷的状态
+    @Override
+    public int queryPStateById(String paperId, HttpServletRequest request) {
+        Paper paper = paperMapper.selectById(paperId);
+        Integer status = paper.getPaperStatus();
+        if (status==-1){
+            return -1;  // 说明问卷已经被封禁,返回-1
+        }else if (status==1){
+            return 1;   // 如果问卷已经发布，直接返回1，可以访问
+        }
+        // 如果问卷没有发布，但是如果问卷发布者是登录用户，也可以访问
+        // 获取token
+        String token = request.getHeader("token");
+        // 如果没有token，用户未登录
+        try {
+            Claims claims = JwtUtil.parseJWT(token);
+            String userId = claims.getSubject();
+            if (paper.getUserId().equals(userId)){  // 如果是当前登录用户发布的问卷，也直接访问
+                return 1;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;  // 说明不是当前用户发布的问卷，不能访问
     }
 }

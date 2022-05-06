@@ -1,16 +1,21 @@
 package com.ming.questionnaire_backstage;
 
+import com.alibaba.fastjson.JSON;
 import com.ming.questionnaire_backstage.mapper.PowerMapper;
 import com.ming.questionnaire_backstage.mapper.RoleMapper;
 import com.ming.questionnaire_backstage.mapper.UserMapper;
+import com.ming.questionnaire_backstage.pojo.LoginUser;
 import com.ming.questionnaire_backstage.pojo.Power;
 import com.ming.questionnaire_backstage.pojo.Role;
+import com.ming.questionnaire_backstage.pojo.User;
 import com.ming.questionnaire_backstage.utils.JwtUtil;
+import com.ming.questionnaire_backstage.utils.RedisUtil;
 import com.ming.questionnaire_backstage.utils.UUIDUtils;
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -18,10 +23,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @SpringBootTest
@@ -35,6 +38,13 @@ class QuestionnaireBackstageApplicationTests {
     // 发送邮件工具
     @Autowired
     JavaMailSenderImpl mailSender;
+
+
+    @Autowired
+    RedisTemplate redisTemplate;
+    // redis工具类
+    @Autowired
+    RedisUtil redisUtil;
 
     @Test
     void contextLoads() {
@@ -129,4 +139,51 @@ class QuestionnaireBackstageApplicationTests {
         boolean matches = p1.matcher("1232343@qq.com").matches();
         System.out.println(matches);
     }
+
+    // 测试云端redis
+    @Test
+    void testRedis(){
+        // Boolean userToday = redisTemplate.opsForValue().setBit("userToday", 0, true);
+        // Set keys = redisTemplate.keys("*");
+        // for (Object key : keys) {
+        //     System.out.println(key);
+        // }
+        redisTemplate.opsForValue().set("k1","v1");
+
+    }
+
+    // 获取当前登录的时间并且格式化
+    @Test
+    void testDate(){
+        Date date = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        System.out.println(sdf.format(date));
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.add(Calendar.DATE,-1);  // 时间减一
+        Date data2 = calendar.getTime();
+        System.out.println(sdf.format(data2));
+    }
+
+    // 测试云端redis
+    @Test
+    void testRedisUtil(){
+        User user = new User(
+                "1", "dede", "123",
+                "123", "123", "345");
+        LoginUser loginUser = new LoginUser(user,Arrays.asList("111","222"));
+        boolean flag = redisUtil.set("testUser",loginUser);
+        System.err.println(flag);
+    }
+
+    // 测试云端redis
+    @Test
+    void testRedisUtil2(){
+        // Object testUser = redisUtil.get("testUser");
+        // System.out.println(testUser);
+        LoginUser loginUser = (LoginUser) redisUtil.get("testUser");
+        System.out.println(loginUser);
+    }
+
 }
