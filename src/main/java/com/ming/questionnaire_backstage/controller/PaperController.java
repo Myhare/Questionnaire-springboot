@@ -1,5 +1,6 @@
 package com.ming.questionnaire_backstage.controller;
 
+import com.ming.questionnaire_backstage.interfaces.AccessLimit;
 import com.ming.questionnaire_backstage.pojo.Answer;
 import com.ming.questionnaire_backstage.pojo.LoginUser;
 import com.ming.questionnaire_backstage.pojo.ResponseResult;
@@ -8,10 +9,14 @@ import com.ming.questionnaire_backstage.pojo.views.AddViewPaper;
 import com.ming.questionnaire_backstage.service.AnswerService;
 import com.ming.questionnaire_backstage.service.PaperService;
 import com.ming.questionnaire_backstage.service.QuestionService;
+import com.ming.questionnaire_backstage.service.UserService;
+import com.ming.questionnaire_backstage.utils.JwtUtil;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -28,10 +33,28 @@ public class PaperController {
     private QuestionService questionService;
     @Autowired
     private AnswerService answerService;
+    @Autowired
+    private UserService userService;
 
     // 添加或者修改一个问卷
     @PostMapping("/addPaper")
-    public ResponseResult addPaper(@RequestBody AddViewPaper reqPaper){
+    public ResponseResult addPaper(@RequestBody AddViewPaper reqPaper,HttpServletRequest request){
+        // 判断用户有没有绑定邮箱，如果没有绑定邮箱，返回信息提醒用户绑定邮箱
+        // 获取token
+        String token = request.getHeader("token");
+        // 解析token
+        String userId = "";
+        try {
+            userId = JwtUtil.parseJWT(token).getSubject();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // 通过userId查询用户邮箱
+        // 如果查询到的email为null，说明用户没有绑定邮箱，直接返回
+        if (StringUtils.isEmpty(userService.getEmailById(userId))){
+            return new ResponseResult(401,"检测到你还没有绑定邮箱，请先绑定邮箱后再发布问卷");
+        }
+
         // 从SecurityContextHolder.getContext()中获取用户信息
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         LoginUser loginUser = (LoginUser) authentication.getPrincipal();
@@ -81,6 +104,7 @@ public class PaperController {
 
     // 通过id查询一个问卷
     @GetMapping("/getPaperById/{paperId}")
+    @AccessLimit(seconds = 3,maxCount = 5)   // 自定义的注解，一秒钟不能连续请求两次
     public ResponseResult selectPaperById(@PathVariable("paperId") String paperId){
         AddViewPaper addViewPaper = paperService.selectPaperById(paperId);
         // 封装一个viewPaper对象返回给前端

@@ -42,6 +42,7 @@ public interface UserService {
     // 验证邮箱
     ResponseResult bandEmail(String email,String key,String userId);
 
-
+    // 通过用户id查询用户绑定邮箱
+    String getEmailById(String userId);
 
 }

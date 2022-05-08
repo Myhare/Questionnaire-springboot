@@ -83,4 +83,11 @@ public class UserTest {
         }
     }
 
+    // 测试通过用户id查询用户邮箱
+    @Test
+    void testSelectEmailById(){
+        String email = userService.getEmailById("dede");
+        System.out.println(email);
+    }
+
 }

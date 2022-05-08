@@ -22,6 +22,9 @@ public interface UserMapper extends BaseMapper<User> {
     // 获取一个用户的权限
     List<String> selectPowerById(String userId);
 
+    // 查询一个用户的详细信息
+    User selectUserInfo(String userId);
+
     // 通过id修改用户的头像路径
     int updateHeaderById(@Param("userId") String userId,@Param("headerName") String headerName);
 

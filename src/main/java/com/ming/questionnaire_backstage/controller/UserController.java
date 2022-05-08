@@ -6,6 +6,8 @@ import com.ming.questionnaire_backstage.pojo.User;
 import com.ming.questionnaire_backstage.service.AsyncService;
 import com.ming.questionnaire_backstage.service.FileUploadService;
 import com.ming.questionnaire_backstage.service.UserService;
+import com.ming.questionnaire_backstage.utils.JwtUtil;
+import io.jsonwebtoken.Claims;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +19,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 
@@ -132,28 +135,32 @@ public class UserController {
 
     // 获取登录用户详细信息
     @GetMapping("/getUserInfo")
-    public ResponseResult getUserInfo(){
+    public ResponseResult getUserInfo(HttpServletRequest request){
         // 获取当前登录用户信息
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        LoginUser loginUser = (LoginUser) authentication.getPrincipal();
-        User user = loginUser.getUser();
-        // 将"/uploadFile/"设置到环境配置中，修改头像服务里面也要修改
-        if (user.getUserHeadPath()!=null){
-            user.setUserHeadPath(getHeadPath+user.getUserHeadPath());  // 更新用户头像信息
+        String token = request.getHeader("token");
+        // 解析token
+        String userId;
+        try {
+            Claims claims = JwtUtil.parseJWT(token);
+            userId = claims.getSubject();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("token非法");
         }
-        if (loginUser!=null){
-            return new ResponseResult(200,"查询成功",user);
+        User user = userService.getUserInfoById(userId);
+        if (user==null){
+            return new ResponseResult(401,"查询失败，用户不存在");
         }else {
-            return new ResponseResult(401,"查询失败，请先检查登录");
+            return new ResponseResult(200,"查询成功",user);
         }
     }
 
     // 用户验证邮箱
     @GetMapping("/bandEmail")
     public ResponseResult bandEmail(@Param("email")String email, @Param("key")String key,@Param("userId")String userId){
-        System.out.println(email);
-        System.out.println(key);
-        System.out.println(userId);
+        // System.out.println(email);
+        // System.out.println(key);
+        // System.out.println(userId);
         return userService.bandEmail(email, key, userId);
     }
 

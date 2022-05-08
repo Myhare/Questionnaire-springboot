@@ -40,5 +40,9 @@
         where u.user_name like concat('%',#{query},'%')
         limit #{pageNum},#{pageSize}
     </select>
+    <!--通过id查询一个用户的详细信息-->
+    <select id="selectUserInfo" resultType="com.ming.questionnaire_backstage.pojo.User">
+        select * from questionnaires.user where user_id=#{userId}
+    </select>
 
 </mapper>

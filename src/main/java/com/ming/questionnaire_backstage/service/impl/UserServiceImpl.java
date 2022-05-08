@@ -47,14 +47,9 @@ public class UserServiceImpl implements UserService {
     private UserMapper userMapper;
     @Autowired
     private UserRoleMapper userRoleMapper;
-    @Autowired
-    private AsyncUtils asyncUtils;
 
     @Autowired
     private RedisUtil redisUtil;
-
-    @Autowired
-    private ServletContext servletContext;
 
 
     @Value("${web.get-head-path}")
@@ -93,7 +88,7 @@ public class UserServiceImpl implements UserService {
             userInfo.setUserHeadPath(getHeadPath+userInfo.getUserHeadPath());  // 更新用户头像信息
         }
         // 将完整的用户信息存入到redis中
-        redisUtil.set("login:"+userId,loginUser,60*60*24);  // 设置三个小时的过期时间
+        redisUtil.set("login:"+userId,loginUser,60*60*3);  // 设置三个小时的过期时间
         // 在redis中存入今天登录的时间
         Date date = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
@@ -116,7 +111,7 @@ public class UserServiceImpl implements UserService {
     // 通过id获取用户详细信息
     @Override
     public User getUserInfoById(String userId) {
-        return userMapper.selectById(userId);
+        return userMapper.selectUserInfo(userId);
     }
 
     // 判断一个用户名是否在数据库中存在
@@ -216,12 +211,13 @@ public class UserServiceImpl implements UserService {
         if (!userEmail.equals("null") && userEmail.equals(email)){
             return new ResponseResult(401,"已经绑定此邮箱");
         }
-
+        String redisEmail = (String) redisUtil.get(email + ":key");
         // 判断servletContext中有没有对应的内容，如果有，提醒用户不要重复发布邮件
-        if (servletContext.getAttribute(email)!=null){
+        if (redisEmail!=null){
             return new ResponseResult(401,"请不要重复发送邮件");
         }
 
+        // 发送邮件功能
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         //生成验证地址
         String charValue = UUIDUtils.getUUID();
@@ -236,15 +232,12 @@ public class UserServiceImpl implements UserService {
         // 发送邮件到指定邮件
         mailSender.send(mailMessage);
 
-        // TODO 以后将这里存储到redis中,并且设置定时删除,这里暂时模拟2分钟后删除
-        // 将验证码存储到servletContext中，2分钟后自动删除这个值
-        servletContext.setAttribute(email,charValue);
-        // 异步请求经过一定的时间后删除servletContext中对应的值
-        asyncUtils.delayRemoveCode(email);
+        // 将邮箱验证码存储到redis中,设置3分钟的有效时间
+        redisUtil.set(email+":key",charValue,60*3);
         return new ResponseResult(200,"发送成功，请前往邮箱验证");  // 发送成功
     }
 
-    // 验证邮箱
+    // 更改绑定邮箱
     @Override
     public ResponseResult bandEmail(String email, String key,String userId) {
         // 对邮件的格式进行验证
@@ -253,7 +246,8 @@ public class UserServiceImpl implements UserService {
             return new ResponseResult(401,"邮箱格式错误");
         }
         // 如果email为null或者和servletContext中的内容不相同，返回2，说明有问题
-        if (servletContext.getAttribute(email)==null || !servletContext.getAttribute(email).equals(key)){
+        String emailKey = (String) redisUtil.get(email + ":key");
+        if (emailKey==null || !emailKey.equals(key)){
             return new ResponseResult(401,"验证码过期，请重新绑定");
         }
         // 到这里说明验证成功，将email存入对应的数据库中
@@ -262,13 +256,23 @@ public class UserServiceImpl implements UserService {
                 .eq("user_id",userId)
                 .set("user_email",email);
         int i = userMapper.update(null, updateWrapper);
-        if (i>0){
-            if (servletContext.getAttribute(email)!=null){
-                servletContext.removeAttribute(email);
-            }
+        if (i>0){   // 如果绑定邮箱变更了
+            redisUtil.del(email + ":key");   // 删除redis中对应的key
             return new ResponseResult(200,"邮箱绑定成功");
         }else {
             return new ResponseResult(401,"发生错误，邮箱绑定失败");
         }
+    }
+
+
+    // 通过用户id查询用户邮箱
+    @Override
+    public String getEmailById(String userId) {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper
+                .select("user_email")
+                .eq("user_id",userId);
+        User user = userMapper.selectOne(queryWrapper);
+        return user.getUserEmail();
     }
 }

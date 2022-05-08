@@ -69,6 +69,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/paper/getPaperById/*").permitAll()
                 // 允许所有用户访问查询问卷是否可以查看接口
                 .antMatchers("/paper/queryPState/*").permitAll()
+                // 允许所有人可以填写问卷
+                .antMatchers("/answer/addAnswer").permitAll()
                 // 除了上面定义的所有请求都需要鉴权认证
                 .anyRequest().authenticated();
 
