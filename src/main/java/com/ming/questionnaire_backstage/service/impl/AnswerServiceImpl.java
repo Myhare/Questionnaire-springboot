@@ -216,6 +216,7 @@ public class AnswerServiceImpl implements AnswerService {
         try {
             // 设置返回的类型
             response.setContentType("application/vnd.ms-excel;charset=UTF-8");  // 返回一个excel一个格式的输出流
+            response.setHeader("Access-Control-Expose-Headers","Content-Disposition");  // 设置允许前端获取请求头
             response.setHeader("Content-Disposition","attachment; filename="+
                     java.net.URLEncoder.encode(paperTitle+"调查结果","UTF-8")+".xlsx"); // 设置附件的名字
             ExcelUtil.exportExcel(response,questionContents,paperTitle);  // 导出excel表
@@ -251,6 +252,7 @@ public class AnswerServiceImpl implements AnswerService {
         String questionTitle = question.getQuestionTitle();  // 查询问题名称
         // 设置返回类型
         response.setContentType("application/vnd.ms-excel;charset=UTF-8");  // 返回一个excel一个格式的输出流
+        response.setHeader("Access-Control-Expose-Headers","Content-Disposition");
         response.setHeader("Content-Disposition","attachment; filename="+
                 java.net.URLEncoder.encode(questionTitle+"回答结果","UTF-8")+".xlsx"); // 设置附件的名字
         List<TextAreaDetails> textAreaDetailsList = answerMapper.getAllTextAreaDetails(questionId);

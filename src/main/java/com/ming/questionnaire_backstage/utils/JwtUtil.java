@@ -79,12 +79,12 @@ public class JwtUtil {
     }
 
     public static void main(String[] args) throws Exception {
-        String token = createJWT("123456");  // JWT可以支持JSON格式的加密
+        String token = createJWT("dede");  // JWT可以支持JSON格式的加密
         System.out.println(token);
         // System.out.println("eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJhMTdmMjgxM2M2Mzc0MGVmYTc3MGQyYTczZGZmNDkyMSIsInN1YiI6IjEyMzQ1NiIsImlzcyI6InNnIiwiaWF0IjoxNjQ3MzQ3MTMyLCJleHAiOjE2NDczNTA3MzJ9.blDSBULCSg-1qHFzGYSrUwoHNAdkQzy-6xFqw3w_ep0");
         // Claims claims = parseJWT(token);   // 对加密后的数据进行解密
-        Claims claims = parseJWT("eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI0MDUyMTg5ZTMwNWI0YzVjOTFmYWVhNDUyYzg2ZWJiMiIsInN1YiI6IjEyMzQ1NiIsImlzcyI6InNnIiwiaWF0IjoxNjQ3Mzk3Mzg4LCJleHAiOjE2NDc0MDA5ODh9.X_pKcZgmP_bU_JRrsQEXNNmaTsbeeX6jESC-4QGhSiQ");   // 对加密后的数据进行解密
-        System.out.println(claims.getSubject());  // 获取解密的详细内容
+        // Claims claims = parseJWT("eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI0MDUyMTg5ZTMwNWI0YzVjOTFmYWVhNDUyYzg2ZWJiMiIsInN1YiI6IjEyMzQ1NiIsImlzcyI6InNnIiwiaWF0IjoxNjQ3Mzk3Mzg4LCJleHAiOjE2NDc0MDA5ODh9.X_pKcZgmP_bU_JRrsQEXNNmaTsbeeX6jESC-4QGhSiQ");   // 对加密后的数据进行解密
+        // System.out.println(claims.getSubject());  // 获取解密的详细内容
     }
 
     /**

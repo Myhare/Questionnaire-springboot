@@ -47,6 +47,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
+                .cors()   // 开启跨域配置
+                .and()
                 // 关闭csrf
                 .csrf().disable()
                 // 不通过session获取SecurityContext
@@ -71,6 +73,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/paper/queryPState/*").permitAll()
                 // 允许所有人可以填写问卷
                 .antMatchers("/answer/addAnswer").permitAll()
+                // 放行静态资源
+                .antMatchers("/**/*.html","/**/*.css","/**/*.js","/img/**","/fonts/**").permitAll()
                 // 除了上面定义的所有请求都需要鉴权认证
                 .anyRequest().authenticated();
 
@@ -86,6 +90,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     // @Override
     // public void configure(WebSecurity web) throws Exception {
     //     // 完全某一个接口
-    //     web.ignoring().antMatchers("/login");
+    //     // web.ignoring().antMatchers("/login");
+    //     // 放行某些静态资源
+    //     // web.ignoring().antMatchers("/static/**");
     // }
 }

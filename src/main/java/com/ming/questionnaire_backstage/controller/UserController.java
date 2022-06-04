@@ -36,7 +36,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    // 修改用户头像
+    // 上传用户头像
     @PostMapping("/uploadHeader")
     public ResponseResult uploadHeader(@RequestParam MultipartFile avatar){
         return fileUploadService.uploadHeader(avatar);
@@ -125,7 +125,7 @@ public class UserController {
         }
     }
 
-    // 发送邮箱验证码
+    // 发送验证邮箱
     @PostMapping("/sendEmail")
     public ResponseResult sendEmail(@RequestBody String email){
         // String email = map.get("email");

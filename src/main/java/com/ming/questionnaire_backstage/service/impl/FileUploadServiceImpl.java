@@ -10,10 +10,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -53,12 +55,15 @@ public class FileUploadServiceImpl implements FileUploadService {
             // String format = sdf.format(new Date());
             String path = uploadPath+newFileName;  // 真实存储路径
             File dest = new File(path);
+            File parentFile = dest.getParentFile();
             //检测是否存在该目录
             if (!dest.getParentFile().exists()){   // 如果不存在这个目录，新建一个目录
                 dest.getParentFile().mkdirs();
             }
             //写入文件
-            headerFile.transferTo(dest);
+            // headerFile.transferTo(dest);
+            FileCopyUtils.copy(headerFile.getInputStream(), Files.newOutputStream(dest.toPath()));  // 因为上面方法使用还不知道怎么使用绝对路径，会自动添加一个相对路径，在linux系统下会报错，这里手动通过流来赋值文件
+
 
             // 将文件名字储存到user数据库中
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -69,6 +74,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         } catch (IOException e) {
             System.out.println("头像上传出现问题");
             e.printStackTrace();
+            throw new RuntimeException("上传头像出现问题");
         }
         HashMap<String, String> map = new HashMap<>();
         map.put("newHeadPath","/uploadFile/"+newFileName);

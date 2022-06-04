@@ -83,9 +83,9 @@ public class UserServiceImpl implements UserService {
 
         // 通过userid查询用户详细信息传入前端
         User userInfo = userMapper.selectById(userId);
-        // 将"/uploadFile/"设置到环境配置中，修改头像服务里面也要修改
+        // 更新用户头像路径
         if (userInfo.getUserHeadPath()!=null){
-            userInfo.setUserHeadPath(getHeadPath+userInfo.getUserHeadPath());  // 更新用户头像信息
+            userInfo.setUserHeadPath(getHeadPath+userInfo.getUserHeadPath());
         }
         // 将完整的用户信息存入到redis中
         redisUtil.set("login:"+userId,loginUser,60*60*3);  // 设置三个小时的过期时间
@@ -111,7 +111,12 @@ public class UserServiceImpl implements UserService {
     // 通过id获取用户详细信息
     @Override
     public User getUserInfoById(String userId) {
-        return userMapper.selectUserInfo(userId);
+        User user = userMapper.selectUserInfo(userId);
+        // 更新用户头像路径
+        if (user.getUserHeadPath()!=null){
+            user.setUserHeadPath(getHeadPath+user.getUserHeadPath());
+        }
+        return user;
     }
 
     // 判断一个用户名是否在数据库中存在
@@ -126,18 +131,19 @@ public class UserServiceImpl implements UserService {
     @Override
     public int addUser(User user) {
         // 插叙user中的id是否在数据库中已经存在，如果存在，报错
-        if (usernameIsExit(user.getUserId())>0){
+        if (usernameIsExit(user.getUserName())>0){
             throw new RuntimeException("数据出错，用户id已经存在");
         }
         // 用户注册，默认将用户昵称设置为用户名
         user.setUserId(user.getUserName());
+        user.setState(1);  // 设置状态为正常，不然添加的时候因为java默认值是0，添加到数据库会显示被封禁
         // 将密码进行加密存储
         // SpringSecurity底层中使用的是下面的加密方法
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         user.setUserPassword(passwordEncoder.encode(user.getUserPassword()));   // 密码加密存储
         // 默认添加的用户都是普通用户
         // TODO 这里普通用户在数据库中是写死的，以后优化
-        int i = userRoleMapper.insert(new UserRole(user.getUserId(), "db335e541e7e40dca964593c64248164"));
+        int i = userRoleMapper.insert(new UserRole(user.getUserId(), "db335e541e7e40dca964593c64248164"));// 默认角色id都是普通用户
         int j = userMapper.insert(user);
         return i*j;  // 上面两个数据库操作，只要有一个失败，就返回错误
     }
