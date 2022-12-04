@@ -9,7 +9,6 @@ import com.ming.questionnaire_backstage.pojo.ResponseResult;
 import com.ming.questionnaire_backstage.pojo.User;
 import com.ming.questionnaire_backstage.pojo.UserRole;
 import com.ming.questionnaire_backstage.service.UserService;
-import com.ming.questionnaire_backstage.utils.AsyncUtils;
 import com.ming.questionnaire_backstage.utils.JwtUtil;
 import com.ming.questionnaire_backstage.utils.RedisUtil;
 import com.ming.questionnaire_backstage.utils.UUIDUtils;
@@ -68,8 +67,10 @@ public class UserServiceImpl implements UserService {
         UsernamePasswordAuthenticationToken authenticationToken
                 = new UsernamePasswordAuthenticationToken(user.getUserName(), user.getUserPassword());
 
-        // 通过authenticationManager.authenticate进行用户验证 需要传入一个authentication接口参数，这里我们创建一个authentication的UsernamePasswordAuthenticationToken实现类
-        // authenticationManager会自动调用UserDetailsService进行用户的验证，因为我们之前自定义了UserDetailsService，所以会调用我们自定义的UserDetailsService进行验证
+        // 通过authenticationManager.authenticate进行用户验证 需要传入一个authentication接口参数，
+        // 这里我们创建一个authentication的UsernamePasswordAuthenticationToken实现类
+        // authenticationManager会自动调用UserDetailsService进行用户的验证，
+        // 因为我们之前自定义了UserDetailsService，所以会调用我们自定义的UserDetailsService进行验证
         // UserDetailsService返回一个LoginUser对象，会自动封装到authenticate中的principal属性中,如果认证没通过，直接报错
         Authentication authenticate = authenticationManager.authenticate(authenticationToken);
         // 如果认证没通过，给出对应提示

@@ -15,6 +15,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+/**
+ * 用户未登录处理
+ */
 @Component
 public class AuthenticationEntryPointImpl implements AuthenticationEntryPoint {
 

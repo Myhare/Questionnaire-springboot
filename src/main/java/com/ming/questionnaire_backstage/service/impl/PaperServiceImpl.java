@@ -49,6 +49,9 @@ public class PaperServiceImpl implements PaperService {
     @Autowired
     private RedisUtil redisUtil;
 
+    private static final String paperRedisKey = "paperRedisKey:";
+    private static final long paperRedisTime = 60*60;  // 一个小时的缓存有效时间
+
     // 添加或者修改一个问卷
     @Override
     public int addOrUpdatePaper(AddViewPaper addViewPaper) {
@@ -71,7 +74,10 @@ public class PaperServiceImpl implements PaperService {
         if (isUpdate){  // 如果是更新表
             // 删除这个表填写的所有答案
             answerService.deleteAnswerByPId(paperId);
+            // 更新表
             paperMapper.updateById(paper);
+            // 删除redis中的缓存
+            redisUtil.del(paperRedisKey+paperId);
         }else {
             paperMapper.insert(paper);
         }
@@ -120,6 +126,8 @@ public class PaperServiceImpl implements PaperService {
     public boolean deletePaperById(String paperId) {
         int i = paperMapper.deleteById(paperId);
         if (i>0){
+            // 删除成功，将如果存在缓存，删除缓存
+            redisUtil.del(paperRedisKey+paperId);
             return true;
         }else {
             return false;
@@ -129,6 +137,10 @@ public class PaperServiceImpl implements PaperService {
     // 通过id查找问卷
     @Override
     public AddViewPaper selectPaperById(String paperId) {
+        // 先通过redis进行查找,如果redis缓存中有数据，直接返回
+        if (redisUtil.get(paperRedisKey+paperId)!=null){
+            return (AddViewPaper) redisUtil.get(paperRedisKey+paperId);
+        }
         AddViewPaper addViewPaper = null;
         try {
             Paper paper = paperMapper.selectById(paperId);
@@ -155,6 +167,8 @@ public class PaperServiceImpl implements PaperService {
                     .setPaperIntroduce(paper.getIntroduce())
                     .setStatus(paper.getPaperStatus())
                     .setQuestionList(viewQuestionList);
+            // 将查询结果添加到redis缓存中
+            redisUtil.set(paperRedisKey+paperId,addViewPaper,paperRedisTime);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("查询问卷和问题异常");

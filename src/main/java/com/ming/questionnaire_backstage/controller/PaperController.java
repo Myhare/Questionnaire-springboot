@@ -104,7 +104,7 @@ public class PaperController {
 
     // 通过id查询一个问卷
     @GetMapping("/getPaperById/{paperId}")
-    @AccessLimit(seconds = 3,maxCount = 5)   // 自定义的注解，一秒钟不能连续请求两次
+    @AccessLimit(seconds = 3,maxCount = 5)   // 自定义的注解，三秒钟不能连续请求五次
     public ResponseResult selectPaperById(@PathVariable("paperId") String paperId){
         AddViewPaper addViewPaper = paperService.selectPaperById(paperId);
         // 封装一个viewPaper对象返回给前端
